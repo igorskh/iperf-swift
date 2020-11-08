@@ -8,26 +8,26 @@
 import Foundation
 
 public struct IperfThroughput {
-    var rawValue: Double
-    var bps: Double {
+    public var rawValue: Double
+    public var bps: Double {
         rawValue*8
     }
     
-    var Kbps: Double {
+    public var Kbps: Double {
         return bps / 1024
     }
-    var Mbps: Double {
+    public var Mbps: Double {
         return Kbps / 1024
     }
-    var Gbps: Double {
+    public var Gbps: Double {
         return Mbps / 1024
     }
     
-    init(bytesPerSecond initValue: Double) {
+    public init(bytesPerSecond initValue: Double) {
         rawValue = initValue
     }
     
-    init(bytes initValue: UInt64, seconds: TimeInterval) {
+    public init(bytes initValue: UInt64, seconds: TimeInterval) {
         self.init(bytesPerSecond: Double(initValue) / seconds)
     }
 }

@@ -46,9 +46,9 @@ public class IperfRunner {
     }
     
     // MARK: Initialisers
-    init() { }
+    public init() { }
     
-    init(with configuration: IperfConfiguration) {
+    public init(with configuration: IperfConfiguration) {
         self.configuration = configuration
     }
     
@@ -177,12 +177,12 @@ public class IperfRunner {
     }
     
     // MARK: Public methods
-    func start(with configuration: IperfConfiguration, _ callback: @escaping (_ status: IperfIntervalResult) -> Void) {
+    public func start(with configuration: IperfConfiguration, _ callback: @escaping (_ status: IperfIntervalResult) -> Void) {
         self.configuration = configuration
         self.start(callback)
     }
     
-    func start(_ callback: @escaping (_ result: IperfIntervalResult) -> Void) {
+    public func start(_ callback: @escaping (_ result: IperfIntervalResult) -> Void) {
         signal(SIGPIPE, SIG_IGN)
         callbackFunction = callback
         state = .initialising
@@ -221,7 +221,7 @@ public class IperfRunner {
         startIperfProcess()
     }
     
-    func stop() {
+    public func stop() {
         guard let pointer = test else {
             return
         }

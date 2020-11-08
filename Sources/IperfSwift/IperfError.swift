@@ -97,7 +97,7 @@ public enum IperfError: Int32 {
     case IENEWTIMER = 300       // Unable to create new timer (check perror)
     case IEUPDATETIMER = 301    // Unable to update timer (check perror)
     
-    var debugDescription: String {
+    public var debugDescription: String {
         switch self {
         case .UNKNOWN:
             return "Unknown error"

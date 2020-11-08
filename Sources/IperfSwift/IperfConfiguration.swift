@@ -13,7 +13,7 @@ public enum IperfProtocol {
     case udp
     case sctp
     
-    var iperfConfigValue: Int32 {
+    public var iperfConfigValue: Int32 {
         switch self {
         case .tcp:
             return Ptcp
@@ -36,19 +36,19 @@ public enum IperfDirection: Int32 {
 }
 
 public struct IperfConfiguration {
-    var address: String? = "127.0.0.1"
-    var numStreams = 2
-    var role = IperfRole.client
-    var reverse = IperfDirection.download
-    var port = 5201
-    var prot = IperfProtocol.tcp
+    public var address: String? = "127.0.0.1"
+    public var numStreams = 2
+    public var role = IperfRole.client
+    public var reverse = IperfDirection.download
+    public var port = 5201
+    public var prot = IperfProtocol.tcp
     
-    var rate: UInt64 = UInt64(1024*1024)
+    public var rate: UInt64 = UInt64(1024*1024)
     
-    var duration: TimeInterval?
-    var timeout: TimeInterval?
-    var tos: Int?
+    public var duration: TimeInterval?
+    public var timeout: TimeInterval?
+    public var tos: Int?
     
-    var reporterInterval: TimeInterval?
-    var statsInterval: TimeInterval?
+    public var reporterInterval: TimeInterval?
+    public var statsInterval: TimeInterval?
 }

@@ -9,25 +9,25 @@ import Foundation
 
 public struct IperfIntervalResult: Identifiable {
     public var id = UUID()
-    var runnerState: IperfRunnerState = .unknown
+    public var runnerState: IperfRunnerState = .unknown
     
-    var streams: [IperfStreamIntervalResult] = []
+    public var streams: [IperfStreamIntervalResult] = []
     
-    var totalBytes: UInt64 = 0
-    var totalPackets: Int32 = 0
-    var totalLostPackets: Int32 = 0
-    var averageJitter: Double = 0.0
-    var duration: TimeInterval = 0.0
-    var state: IperfState = .UNKNOWN
-    var debugDescription: String = ""
+    public var totalBytes: UInt64 = 0
+    public var totalPackets: Int32 = 0
+    public var totalLostPackets: Int32 = 0
+    public var averageJitter: Double = 0.0
+    public var duration: TimeInterval = 0.0
+    public var state: IperfState = .UNKNOWN
+    public var debugDescription: String = ""
     
-    var throughput = IperfThroughput.init(bytesPerSecond: 0.0)
-    var hasError: Bool {
+    public var throughput = IperfThroughput.init(bytesPerSecond: 0.0)
+    public var hasError: Bool {
         state.rawValue < 0 || error != .IENONE
     }
-    var error: IperfError = .IENONE
+    public var error: IperfError = .IENONE
     
-    mutating func evaulate() {
+    mutating public func evaulate() {
 //        var sum_jitter: Double = 0.0
         for s in streams {
             totalBytes += s.bytesTransferred
