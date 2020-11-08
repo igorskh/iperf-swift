@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "iperf-swift",
+    name: "IperfSwift",
     products: [
         .library(
             name: "IperfSwift",
