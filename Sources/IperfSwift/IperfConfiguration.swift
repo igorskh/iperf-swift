@@ -8,7 +8,7 @@
 import Foundation
 import IperfCLib
 
-enum IperfProtocol {
+public enum IperfProtocol {
     case tcp
     case udp
     case sctp
@@ -25,17 +25,17 @@ enum IperfProtocol {
     }
 }
 
-enum IperfRole: Int8 {
+public enum IperfRole: Int8 {
     case server = 115
     case client = 99
 }
 
-enum IperfDirection: Int32 {
+public enum IperfDirection: Int32 {
     case download = 1
     case upload = 0
 }
 
-struct IperfConfiguration {
+public struct IperfConfiguration {
     var address: String? = "127.0.0.1"
     var numStreams = 2
     var role = IperfRole.client

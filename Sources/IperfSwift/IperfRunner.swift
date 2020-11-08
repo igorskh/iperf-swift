@@ -8,14 +8,14 @@
 import Foundation
 import IperfCLib
 
-enum IperfRunnerState {
+public enum IperfRunnerState {
     case unknown
     case ready
     case initialising
     case running
 }
 
-enum IperfState: Int8 {
+public enum IperfState: Int8 {
     case TEST_START = 1
     case TEST_RUNNING = 2
     case TEST_END = 4
@@ -34,7 +34,7 @@ enum IperfState: Int8 {
     case INIT_ERROR = -10
 }
 
-class IperfRunner {
+public class IperfRunner {
     private var configuration: IperfConfiguration = IperfConfiguration()
     private var callbackFunction: (_ status: IperfIntervalResult) -> Void = {result in }
     private var observer: NSObjectProtocol? = nil

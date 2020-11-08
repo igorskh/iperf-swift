@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct IperfThroughput {
+public struct IperfThroughput {
     var rawValue: Double
     var bps: Double {
         rawValue*8

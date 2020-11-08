@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum IperfError: Int32 {
+public enum IperfError: Int32 {
     case UNKNOWN = -1
     case IENONE = 0             // No error
     /* Parameter errors */

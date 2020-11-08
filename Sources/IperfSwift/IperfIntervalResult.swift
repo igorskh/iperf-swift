@@ -7,8 +7,8 @@
 
 import Foundation
 
-struct IperfIntervalResult: Identifiable {
-    var id = UUID()
+public struct IperfIntervalResult: Identifiable {
+    public var id = UUID()
     var runnerState: IperfRunnerState = .unknown
     
     var streams: [IperfStreamIntervalResult] = []
