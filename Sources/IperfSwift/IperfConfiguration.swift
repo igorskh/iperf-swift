@@ -51,4 +51,6 @@ public struct IperfConfiguration {
     
     public var reporterInterval: TimeInterval?
     public var statsInterval: TimeInterval?
+    
+    public init() {}
 }

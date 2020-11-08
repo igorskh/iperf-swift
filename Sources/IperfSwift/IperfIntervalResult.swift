@@ -27,6 +27,18 @@ public struct IperfIntervalResult: Identifiable {
     }
     public var error: IperfError = .IENONE
     
+    public init(
+        runnerState: IperfRunnerState = .unknown,
+        debugDescription: String = "",
+        state: IperfState = .UNKNOWN,
+        error: IperfError = .IENONE
+    ) {
+        self.runnerState = runnerState
+        self.debugDescription = debugDescription
+        self.state = state
+        self.error = error
+    }
+    
     mutating public func evaulate() {
 //        var sum_jitter: Double = 0.0
         for s in streams {

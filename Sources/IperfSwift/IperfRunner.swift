@@ -195,8 +195,8 @@ public class IperfRunner {
         test = iperf_new_test()
         guard let testPointer = test else {
             callback(IperfIntervalResult(
-                        state: .INIT_ERROR,
-                        debugDescription: "iperf_new_test failed")
+                        debugDescription: "iperf_new_test failed",
+                        state: .INIT_ERROR)
             )
             return
         }
@@ -204,8 +204,8 @@ public class IperfRunner {
         let code = iperf_defaults(test)
         if code < 0 {
             callback(IperfIntervalResult(
-                        state: .INIT_ERROR,
-                        debugDescription: "iperf_defaults failed with code \(code)")
+                        debugDescription: "iperf_defaults failed with code \(code)",
+                        state: .INIT_ERROR)
             )
             return
         }
