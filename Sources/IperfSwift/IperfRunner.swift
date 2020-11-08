@@ -13,6 +13,7 @@ public enum IperfRunnerState {
     case ready
     case initialising
     case running
+    case error
 }
 
 public enum IperfState: Int8 {
@@ -31,17 +32,25 @@ public enum IperfState: Int8 {
     case SERVER_ERROR = -2
     
     case UNKNOWN = 0
-    case INIT_ERROR = -10
 }
+
+public typealias reporterFunctionType = (_ status: IperfIntervalResult) -> Void
+public typealias errorFunctionType = (_ error: IperfError) -> Void
+public typealias runnerStateFunctionType = (_ error: IperfRunnerState) -> Void
 
 public class IperfRunner {
     private var configuration: IperfConfiguration = IperfConfiguration()
-    private var callbackFunction: (_ status: IperfIntervalResult) -> Void = {result in }
+    
+    private var onReporterFunction: reporterFunctionType = {result in }
+    private var onErrorFunction: errorFunctionType = {error in }
+    private var onRunnerStateFunction: runnerStateFunctionType = {error in }
+    
     private var observer: NSObjectProtocol? = nil
-    private var test: UnsafeMutablePointer<iperf_test>? = nil
+    private var currentTest: UnsafeMutablePointer<iperf_test>? = nil
+    
     private var state: IperfRunnerState = .ready {
         willSet {
-            callbackFunction(IperfIntervalResult(runnerState: newValue))
+            onRunnerStateFunction(newValue)
         }
     }
     
@@ -68,7 +77,7 @@ public class IperfRunner {
         }
         
         let runningTest = pointer.pointee
-        var result = IperfIntervalResult()
+        var result = IperfIntervalResult(prot: configuration.prot)
         result.debugDescription = "OK"
         result.state = IperfState(rawValue: runningTest.state) ?? .UNKNOWN
         
@@ -93,7 +102,7 @@ public class IperfRunner {
         // Calculate sum/average over streams
         result.evaulate()
         
-        callbackFunction(result)
+        onReporterFunction(result)
     }
     
     // MARK: Private methods
@@ -104,46 +113,46 @@ public class IperfRunner {
         }
         
         // Server/Client
-        iperf_set_test_role(test, configuration.role.rawValue)
-        iperf_set_test_server_port(test, Int32(configuration.port))
+        iperf_set_test_role(currentTest, configuration.role.rawValue)
+        iperf_set_test_server_port(currentTest, Int32(configuration.port))
         
         if let reporterInterval = configuration.reporterInterval {
-            iperf_set_test_reporter_interval(test, Double(reporterInterval))
-            iperf_set_test_stats_interval(test, Double(reporterInterval))
+            iperf_set_test_reporter_interval(currentTest, Double(reporterInterval))
+            iperf_set_test_stats_interval(currentTest, Double(reporterInterval))
         }
         
         if configuration.role == .server {
             if let addr = addr {
-                iperf_set_test_bind_address(test, addr)
+                iperf_set_test_bind_address(currentTest, addr)
             }
         }
         
         if configuration.role == .client {
-            set_protocol(test, configuration.prot.iperfConfigValue)
-            iperf_set_test_reverse(test, configuration.reverse.rawValue)
+            set_protocol(currentTest, configuration.prot.iperfConfigValue)
+            iperf_set_test_reverse(currentTest, configuration.reverse.rawValue)
             
             var blksize: Int32 = 0
             if configuration.prot == .tcp {
                 blksize = DEFAULT_TCP_BLKSIZE
-                iperf_set_test_num_streams(test, Int32(configuration.numStreams))
+                iperf_set_test_num_streams(currentTest, Int32(configuration.numStreams))
             } else if configuration.prot == .udp {
-                iperf_set_test_rate(test, UInt64(configuration.rate))
+                iperf_set_test_rate(currentTest, UInt64(configuration.rate))
             } else if configuration.prot == .sctp {
                 blksize = DEFAULT_SCTP_BLKSIZE
             }
-            iperf_set_test_blksize(test, blksize)
+            iperf_set_test_blksize(currentTest, blksize)
             
             if let addr = addr {
-                iperf_set_test_server_hostname(test, addr)
+                iperf_set_test_server_hostname(currentTest, addr)
             }
             if let duration = configuration.duration {
-                iperf_set_test_duration(test, Int32(duration))
+                iperf_set_test_duration(currentTest, Int32(duration))
             }
             if let timeout = configuration.timeout {
-                iperf_set_test_connect_timeout(test, Int32(timeout) * 1000)
+                iperf_set_test_connect_timeout(currentTest, Int32(timeout) * 1000)
             }
             if let tos = configuration.tos {
-                iperf_set_test_tos(test, Int32(tos))
+                iperf_set_test_tos(currentTest, Int32(tos))
             }
         }
     }
@@ -160,31 +169,37 @@ public class IperfRunner {
             
             var code: Int32
             if self.configuration.role == .client {
-                code = iperf_run_client(self.test)
+                code = iperf_run_client(self.currentTest)
             } else {
-                code = iperf_run_server(self.test)
+                code = iperf_run_server(self.currentTest)
             }
             if code < 0 || i_errno != IperfError.IENONE.rawValue {
-                let error = IperfError.init(rawValue: i_errno) ?? .UNKNOWN
-                self.callbackFunction(IperfIntervalResult(
-                        debugDescription:
-                            (self.configuration.role == .client ? "iperf_run_client" : "iperf_run_server")
-                            + "failed: \(error.debugDescription)",
-                        error: error)
-                )
+                self.onErrorFunction(IperfError.init(rawValue: i_errno) ?? .UNKNOWN)
             }
         }
     }
     
     // MARK: Public methods
-    public func start(with configuration: IperfConfiguration, _ callback: @escaping (_ status: IperfIntervalResult) -> Void) {
+    public func start(
+        with configuration: IperfConfiguration,
+        _ onReporter: @escaping reporterFunctionType,
+        _ onError: @escaping errorFunctionType,
+        _ onRunnerState: @escaping runnerStateFunctionType)
+    {
         self.configuration = configuration
-        self.start(callback)
+        self.start(onReporter, onError, onRunnerState)
     }
     
-    public func start(_ callback: @escaping (_ result: IperfIntervalResult) -> Void) {
+    public func start(
+        _ onReporter: @escaping reporterFunctionType,
+        _ onError: @escaping errorFunctionType,
+        _ onRunnerState: @escaping runnerStateFunctionType
+    ) {
         signal(SIGPIPE, SIG_IGN)
-        callbackFunction = callback
+        onReporterFunction = onReporter
+        onErrorFunction = onError
+        onRunnerStateFunction = onRunnerState
+        
         state = .initialising
         
         if let observer = self.observer {
@@ -192,22 +207,14 @@ public class IperfRunner {
         }
         
         stop()
-        test = iperf_new_test()
-        guard let testPointer = test else {
-            callback(IperfIntervalResult(
-                        debugDescription: "iperf_new_test failed",
-                        state: .INIT_ERROR)
-            )
-            return
+        currentTest = iperf_new_test()
+        guard let testPointer = currentTest else {
+            return onErrorFunction(.INIT_ERROR)
         }
         
-        let code = iperf_defaults(test)
+        let code = iperf_defaults(currentTest)
         if code < 0 {
-            callback(IperfIntervalResult(
-                        debugDescription: "iperf_defaults failed with code \(code)",
-                        state: .INIT_ERROR)
-            )
-            return
+            return onErrorFunction(.INIT_ERROR_DEFAULTS)
         }
 
         applyConfiguration()
@@ -222,7 +229,7 @@ public class IperfRunner {
     }
     
     public func stop() {
-        guard let pointer = test else {
+        guard let pointer = currentTest else {
             return
         }
         if pointer.pointee.state != IPERF_DONE {
