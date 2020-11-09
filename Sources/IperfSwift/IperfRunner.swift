@@ -161,7 +161,7 @@ public class IperfRunner {
     private func startIperfProcess() {
         DispatchQueue.global(qos: .userInitiated).async {
             defer {
-                DispatchQueue.main.async { self.state = .ready }
+                DispatchQueue.main.async { self.cleanState() }
             }
             
             i_errno = IperfError.IENONE.rawValue
@@ -177,6 +177,13 @@ public class IperfRunner {
             if code < 0 || i_errno != IperfError.IENONE.rawValue {
                 self.onErrorFunction(IperfError.init(rawValue: i_errno) ?? .UNKNOWN)
             }
+        }
+    }
+    
+    private func cleanState() {
+        state = .ready
+        if let observer = self.observer {
+            NotificationCenter.default.removeObserver(observer)
         }
     }
     
@@ -201,13 +208,9 @@ public class IperfRunner {
         onErrorFunction = onError
         onRunnerStateFunction = onRunnerState
         
+        cleanState()
         state = .initialising
         
-        if let observer = self.observer {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        
-        stop()
         currentTest = iperf_new_test()
         guard let testPointer = currentTest else {
             return onErrorFunction(.INIT_ERROR)
