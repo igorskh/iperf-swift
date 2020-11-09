@@ -27,9 +27,8 @@
 #ifndef        __FLOW_LABEL_H
 #define        __FLOW_LABEL_H
 
-
 #ifdef __linux__
-# include "linux/types.h"
+#include <linux/types.h>
 #else
 # include <stdint.h>
 # include <netinet/in.h>

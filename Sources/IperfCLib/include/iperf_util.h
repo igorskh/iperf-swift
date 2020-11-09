@@ -32,6 +32,8 @@
 #include <sys/select.h>
 #include <stddef.h>
 
+#include <File.h>
+
 int readentropy(void *out, size_t outsize);
 
 void fill_with_repeating_pattern(void *out, size_t outsize);
