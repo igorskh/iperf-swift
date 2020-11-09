@@ -14,6 +14,7 @@ public enum IperfRunnerState {
     case initialising
     case running
     case error
+    case stopping
 }
 
 public enum IperfState: Int8 {
@@ -232,6 +233,8 @@ public class IperfRunner {
         guard let pointer = currentTest else {
             return
         }
+        
+        onRunnerStateFunction(.stopping)
         if pointer.pointee.state != IPERF_DONE {
             pointer.pointee.done = 1
             if configuration.role == .server {
