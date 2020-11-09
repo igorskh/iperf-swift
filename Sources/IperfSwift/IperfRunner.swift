@@ -54,6 +54,7 @@ public class IperfRunner {
             onRunnerStateFunction(newValue)
         }
     }
+    private var uid = UUID().uuidString
     
     // MARK: Initialisers
     public init() { }
@@ -65,7 +66,10 @@ public class IperfRunner {
     // MARK: Callbacks
     private let reporterCallback: @convention(c) (UnsafeMutablePointer<iperf_test>?) -> Void = { refTest in
         DispatchQueue.main.async {
-            NotificationCenter.default.post(name: Notification.Name(IperfNotificationName.status), object: refTest)
+            if let testPointer = refTest {
+                let testUID = String(cString: testPointer.pointee.title)
+                NotificationCenter.default.post(name: Notification.Name(IperfNotificationName.status.rawValue + testUID), object: refTest)
+            }
         }
     }
     
@@ -224,9 +228,10 @@ public class IperfRunner {
         applyConfiguration()
         
         // Cofingure callbacks and notifications
+        testPointer.pointee.title = strdup(uid)
         testPointer.pointee.reporter_callback = reporterCallback
         observer = NotificationCenter.default.addObserver(
-            forName: Notification.Name(IperfNotificationName.status), object: nil, queue: nil, using: reporterNotificationCallback
+            forName: Notification.Name(IperfNotificationName.status.rawValue + uid), object: nil, queue: nil, using: reporterNotificationCallback
         )
         
         startIperfProcess()
