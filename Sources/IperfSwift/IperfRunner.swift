@@ -159,7 +159,7 @@ public class IperfRunner {
     }
     
     private func startIperfProcess() {
-        DispatchQueue.global(qos: .background).async {
+        DispatchQueue.global(qos: .userInitiated).async {
             defer {
                 DispatchQueue.main.async { self.state = .ready }
             }
