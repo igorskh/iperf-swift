@@ -15,6 +15,7 @@ public enum IperfRunnerState {
     case running
     case error
     case stopping
+    case finished
 }
 
 public enum IperfState: Int8 {
@@ -86,8 +87,11 @@ public class IperfRunner {
         result.debugDescription = "OK"
         result.state = IperfState(rawValue: runningTest.state) ?? .UNKNOWN
         
-        if configuration.role == .server && result.state == .IPERF_DONE {
-            return
+        if result.state == .IPERF_DONE {
+            state = .finished
+            if configuration.role == .server {
+                return
+            }
         }
         
         guard var stream: UnsafeMutablePointer<iperf_stream> = runningTest.streams.slh_first else {
@@ -185,7 +189,6 @@ public class IperfRunner {
     }
     
     private func cleanState() {
-        state = .ready
         if let observer = self.observer {
             NotificationCenter.default.removeObserver(observer)
         }
