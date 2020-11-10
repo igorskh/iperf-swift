@@ -41,12 +41,11 @@ public typealias errorFunctionType = (_ error: IperfError) -> Void
 public typealias runnerStateFunctionType = (_ error: IperfRunnerState) -> Void
 
 public class IperfRunner {
-    private var configuration: IperfConfiguration = IperfConfiguration()
-    
     private var onReporterFunction: reporterFunctionType = {result in }
     private var onErrorFunction: errorFunctionType = {error in }
     private var onRunnerStateFunction: runnerStateFunctionType = {error in }
     
+    private var configuration: IperfConfiguration? = nil
     private var observer: NSObjectProtocol? = nil
     private var currentTest: UnsafeMutablePointer<iperf_test>? = nil
     
@@ -55,11 +54,8 @@ public class IperfRunner {
             onRunnerStateFunction(newValue)
         }
     }
-    private var uid = UUID().uuidString
     
     // MARK: Initialisers
-    public init() { }
-    
     public init(with configuration: IperfConfiguration) {
         self.configuration = configuration
     }
@@ -68,7 +64,7 @@ public class IperfRunner {
     private let reporterCallback: @convention(c) (UnsafeMutablePointer<iperf_test>?) -> Void = { refTest in
         DispatchQueue.main.async {
             if let testPointer = refTest {
-                let testUID = String(cString: testPointer.pointee.title)
+                let testUID = String(testPointer.hashValue)
                 NotificationCenter.default.post(name: Notification.Name(IperfNotificationName.status.rawValue + testUID), object: refTest)
             }
         }
@@ -78,7 +74,8 @@ public class IperfRunner {
         if state != .running {
             return
         }
-        guard let pointer = notification.object as? UnsafeMutablePointer<iperf_test> else {
+        guard let pointer = notification.object as? UnsafeMutablePointer<iperf_test>,
+              let configuration = configuration else {
             return
         }
         
@@ -116,6 +113,10 @@ public class IperfRunner {
     
     // MARK: Private methods
     private func applyConfiguration() {
+        guard let configuration = configuration else {
+            return
+        }
+        
         var addr: UnsafePointer<Int8>? = nil
         if let address = configuration.address, !address.isEmpty {
             addr = NSString(string: address).utf8String
@@ -168,32 +169,57 @@ public class IperfRunner {
     
     private func startIperfProcess() {
         DispatchQueue.global(qos: .userInitiated).async {
-            defer {
-                DispatchQueue.main.async { self.cleanState() }
-            }
-            
             i_errno = IperfError.IENONE.rawValue
             
             DispatchQueue.main.sync { self.state = .running }
             
             var code: Int32
-            if self.configuration.role == .client {
+            if let configuration = self.configuration,
+               configuration.role == .client {
                 code = iperf_run_client(self.currentTest)
             } else {
                 code = iperf_run_server(self.currentTest)
             }
             if code < 0 || i_errno != IperfError.IENONE.rawValue {
-                self.onErrorFunction(IperfError.init(rawValue: i_errno) ?? .UNKNOWN)
+                self.onError(IperfError.init(rawValue: i_errno) ?? .UNKNOWN)
+            } else {
+                guard let configuration = self.configuration else {
+                    return self.cleanState()
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + (configuration.reporterInterval ?? 2.0)) {
+                    if self.currentTest != nil {
+                        self.cleanState()
+                    }
+                }
             }
-            
-            i_errno = IperfError.IENONE.rawValue
         }
     }
     
-    private func cleanState() {
-        if let observer = self.observer {
+    private func cleanState(isExit: Bool = true) {
+        if let observer = observer {
             NotificationCenter.default.removeObserver(observer)
+            self.observer = nil
         }
+        
+        if isExit && configuration != nil {
+            configuration = nil
+        }
+        if currentTest != nil {
+            iperf_free_test(currentTest)
+            currentTest = nil
+        }
+        if isExit && (state == .running || state == .stopping) {
+            state = .finished
+        }
+    }
+    
+    private func onError(_ error: IperfError) {
+        state = .error
+        onErrorFunction(error)
+        
+        cleanState()
+        // Reset global error code
+        i_errno = IperfError.IENONE.rawValue
     }
     
     // MARK: Public methods
@@ -217,26 +243,28 @@ public class IperfRunner {
         onErrorFunction = onError
         onRunnerStateFunction = onRunnerState
         
-        cleanState()
+        cleanState(isExit: false)
         state = .initialising
         
         currentTest = iperf_new_test()
         guard let testPointer = currentTest else {
-            return onErrorFunction(.INIT_ERROR)
+            return self.onError(.INIT_ERROR)
         }
         
         let code = iperf_defaults(currentTest)
         if code < 0 {
-            return onErrorFunction(.INIT_ERROR_DEFAULTS)
+            return self.onError(.INIT_ERROR_DEFAULTS)
         }
 
         applyConfiguration()
         
         // Cofingure callbacks and notifications
-        testPointer.pointee.title = strdup(uid)
         testPointer.pointee.reporter_callback = reporterCallback
         observer = NotificationCenter.default.addObserver(
-            forName: Notification.Name(IperfNotificationName.status.rawValue + uid), object: nil, queue: nil, using: reporterNotificationCallback
+            forName: Notification.Name(IperfNotificationName.status.rawValue + String(testPointer.hashValue)),
+            object: nil,
+            queue: nil,
+            using: reporterNotificationCallback
         )
         
         startIperfProcess()
@@ -250,7 +278,8 @@ public class IperfRunner {
         state = .stopping
         if pointer.pointee.state != IPERF_DONE {
             pointer.pointee.done = 1
-            if configuration.role == .server {
+            if let configuration = configuration,
+               configuration.role == .server {
                 shutdown(pointer.pointee.listener, SHUT_RDWR)
                 close(pointer.pointee.listener)
             }
