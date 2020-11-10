@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  IperfIntervalResult.swift
 //  
 //
 //  Created by Igor Kim on 08.11.20.
