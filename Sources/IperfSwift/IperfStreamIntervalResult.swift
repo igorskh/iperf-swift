@@ -33,6 +33,9 @@ public struct IperfStreamIntervalResult {
     var rttvar: Int32 = 0
     var pmtu: Int32 = 0
     
+    var startTime: Double = 0
+    var endTime: Double = 0
+    
     var intervalTimeDiff = TimeInterval(0.0)
     
     init(_ results: iperf_interval_results) {
@@ -48,6 +51,9 @@ public struct IperfStreamIntervalResult {
         withUnsafeMutablePointer(to: &timeConv2) { pointer in
             time2Pointer = pointer
         }
+        
+        startTime = Double(timeConv2.secs) + Double(timeConv2.usecs)*1e-6
+        endTime = Double(timeConv1.secs) + Double(timeConv1.usecs)*1e-6
         
         iperf_time_diff(time1Pointer, time2Pointer, &diff)
         intervalTimeDiff = Double(diff.secs) + Double(diff.usecs)*1e-6
