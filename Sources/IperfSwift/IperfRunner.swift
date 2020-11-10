@@ -242,7 +242,7 @@ public class IperfRunner {
             return
         }
         
-        onRunnerStateFunction(.stopping)
+        state = .stopping
         if pointer.pointee.state != IPERF_DONE {
             pointer.pointee.done = 1
             if configuration.role == .server {
