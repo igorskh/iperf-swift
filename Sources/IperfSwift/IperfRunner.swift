@@ -185,6 +185,8 @@ public class IperfRunner {
             if code < 0 || i_errno != IperfError.IENONE.rawValue {
                 self.onErrorFunction(IperfError.init(rawValue: i_errno) ?? .UNKNOWN)
             }
+            
+            i_errno = IperfError.IENONE.rawValue
         }
     }
     
