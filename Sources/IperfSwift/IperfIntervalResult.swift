@@ -16,40 +16,50 @@ public struct IperfIntervalResult: Identifiable {
     public var totalBytes: UInt64 = 0
     public var totalPackets: Int32 = 0
     public var totalLostPackets: Int32 = 0
+    public var totalOutoforderPackets: Int32 = 0
     public var averageJitter: Double = 0.0
+    public var averageRtt: Double = 0.0
     public var duration: TimeInterval = 0.0
     public var state: IperfState = .UNKNOWN
     public var debugDescription: String = ""
     
     public var throughput = IperfThroughput.init(bytesPerSecond: 0.0)
     public var hasError: Bool {
-        state.rawValue < 0 || error != .IENONE
+        error != .IENONE
     }
-    public var error: IperfError = .IENONE
+    public var error: IperfError = .UNKNOWN
+    public var prot: IperfProtocol = .tcp
     
     public init(
         runnerState: IperfRunnerState = .unknown,
         debugDescription: String = "",
         state: IperfState = .UNKNOWN,
-        error: IperfError = .IENONE
+        error: IperfError = .UNKNOWN,
+        prot: IperfProtocol = .tcp
     ) {
         self.runnerState = runnerState
         self.debugDescription = debugDescription
         self.state = state
         self.error = error
+        self.prot = prot
     }
     
     mutating public func evaulate() {
-//        var sum_jitter: Double = 0.0
+        var sumJitter: Double = 0.0
         for s in streams {
             totalBytes += s.bytesTransferred
-//            totalPackets += s.intervalPacketCount
-//            totalLostPackets += s.intervalCntError
-//            sum_jitter += s.jitter
+            if self.prot == .udp {
+                totalPackets += s.intervalPacketCount
+                totalLostPackets += s.intervalCntError
+                totalOutoforderPackets += s.intervalOutoforderPackets
+                sumJitter += s.jitter
+            }
         }
         if let first = streams.first {
             duration = first.intervalDuration
-//            averageJitter = sum_jitter / Double(streams.count)
+            if self.prot == .udp {
+                averageJitter = sumJitter / Double(streams.count)
+            }
             throughput = IperfThroughput(bytes: totalBytes, seconds: first.intervalDuration)
         }
     }

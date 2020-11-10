@@ -97,6 +97,9 @@ public enum IperfError: Int32 {
     case IENEWTIMER = 300       // Unable to create new timer (check perror)
     case IEUPDATETIMER = 301    // Unable to update timer (check perror)
     
+    case INIT_ERROR = 400
+    case INIT_ERROR_DEFAULTS = 401
+    
     public var debugDescription: String {
         switch self {
         case .UNKNOWN:
@@ -271,6 +274,10 @@ public enum IperfError: Int32 {
             return "Unable to create new timer (check perror)"
         case .IEUPDATETIMER:
             return "Unable to update timer (check perror)"
+        case .INIT_ERROR:
+            return "iperf_new_test failed"
+        case .INIT_ERROR_DEFAULTS:
+            return "iperf_defaults failed"
         }
     }
 }
