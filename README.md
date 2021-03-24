@@ -1,5 +1,9 @@
 # Swift wrapper for iPerf
 
+An easy to use Swift wrapper for iPerf.
+
+## Usage
+
 An appliction using this package: [iPerf SwiftUI](https://github.com/igorskh/iperf-swiftui)
 
 Package implements iPerf server and client.
@@ -60,3 +64,7 @@ class IperfRunnerController: ObservableObject, Identifiable {
 }
 
 ```
+
+## Not implemented
+
+The code which requires OpenSSL library is currently commented. 

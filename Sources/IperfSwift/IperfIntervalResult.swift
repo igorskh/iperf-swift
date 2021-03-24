@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  IperfIntervalResult.swift
 //  
 //
 //  Created by Igor Kim on 08.11.20.
@@ -22,6 +22,9 @@ public struct IperfIntervalResult: Identifiable {
     public var duration: TimeInterval = 0.0
     public var state: IperfState = .UNKNOWN
     public var debugDescription: String = ""
+    
+    public var startTime: TimeInterval = 0.0
+    public var endTime: TimeInterval = 0.0
     
     public var throughput = IperfThroughput.init(bytesPerSecond: 0.0)
     public var hasError: Bool {
@@ -56,7 +59,10 @@ public struct IperfIntervalResult: Identifiable {
             }
         }
         if let first = streams.first {
+            startTime = first.startTime
+            endTime = first.endTime
             duration = first.intervalDuration
+            
             if self.prot == .udp {
                 averageJitter = sumJitter / Double(streams.count)
             }
