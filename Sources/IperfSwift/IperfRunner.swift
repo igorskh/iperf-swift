@@ -95,7 +95,7 @@ public class IperfRunner {
             return
         }
         while true {
-            let intervalResultsP: UnsafeMutablePointer<iperf_interval_results>? = extract_iperf_interval_results(stream)
+            let intervalResultsP: UnsafeMutablePointer<iperf_interval_results>? = extract_iperf_interval_results(OpaquePointer(stream))
             if let intervalResults = intervalResultsP?.pointee {
                 result.streams.append(IperfStreamIntervalResult(intervalResults))
             }
