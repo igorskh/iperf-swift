@@ -4,7 +4,7 @@ An easy to use Swift wrapper for iPerf.
 
 ## Usage
 
-An appliction using this package: [iPerf SwiftUI](https://github.com/igorskh/iperf-swiftui)
+An application using this package: [iPerf SwiftUI](https://github.com/igorskh/iperf-swiftui)
 
 Package implements iPerf server and client.
 
