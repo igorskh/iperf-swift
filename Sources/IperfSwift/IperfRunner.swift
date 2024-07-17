@@ -139,7 +139,11 @@ public class IperfRunner {
         
         if configuration.role == .client {
             set_protocol(currentTest, configuration.prot.iperfConfigValue)
-            iperf_set_test_reverse(currentTest, configuration.reverse.rawValue)
+            if configuration.direction == .bidirectional {
+                iperf_set_test_bidirectional(currentTest, configuration.direction.rawValue)
+            } else {
+                iperf_set_test_reverse(currentTest, configuration.direction.rawValue)
+            }
             
             var blksize: Int32 = 0
             if configuration.prot == .tcp {

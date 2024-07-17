@@ -31,6 +31,7 @@ public enum IperfRole: Int8 {
 }
 
 public enum IperfDirection: Int32 {
+    case bidirectional = -1
     case download = 1
     case upload = 0
 }
@@ -39,7 +40,7 @@ public struct IperfConfiguration {
     public var address: String? = "127.0.0.1"
     public var numStreams = 2
     public var role = IperfRole.client
-    public var reverse = IperfDirection.download
+    public var direction = IperfDirection.download
     public var port = 5201
     public var prot = IperfProtocol.tcp
     
